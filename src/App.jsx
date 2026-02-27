@@ -107,40 +107,20 @@ const DISHES = [
 ]
 
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
-const categoryArt = {
-  'Druer': { emoji: '🍇', c1: '#7c3aed', c2: '#a78bfa', tags: 'grapes,wine,vineyard' },
-  'Regioner': { emoji: '🗺️', c1: '#0ea5e9', c2: '#67e8f9', tags: 'vineyard,landscape,wine' },
-  'Smaking': { emoji: '🍷', c1: '#be123c', c2: '#fb7185', tags: 'wine,glass,tasting' },
-  'Mat & vin': { emoji: '🧀', c1: '#f59e0b', c2: '#fcd34d', tags: 'food,wine,dinner' },
-  'Produksjon': { emoji: '🛢️', c1: '#334155', c2: '#64748b', tags: 'wine,barrel,cellar' },
-}
-
-function imageFallbackSvg(question) {
-  const art = categoryArt[question.c] || { emoji: '🍷', c1: '#7c3aed', c2: '#a78bfa' }
-  const title = (question.c || 'VinQuiz').replace(/&/g, '&amp;')
-  const subtitle = (question.q || '').slice(0, 68).replace(/&/g, '&amp;')
-
-  const svg = `
-<svg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'>
-  <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='${art.c1}'/><stop offset='100%' stop-color='${art.c2}'/></linearGradient></defs>
-  <rect width='900' height='520' fill='url(#g)'/>
-  <circle cx='760' cy='110' r='120' fill='rgba(255,255,255,0.12)'/>
-  <circle cx='130' cy='450' r='180' fill='rgba(255,255,255,0.08)'/>
-  <text x='60' y='110' font-size='72' font-family='Inter,Arial,sans-serif'>${art.emoji}</text>
-  <text x='60' y='185' font-size='52' fill='white' font-weight='700' font-family='Inter,Arial,sans-serif'>${title}</text>
-  <text x='60' y='235' font-size='28' fill='rgba(255,255,255,0.92)' font-family='Inter,Arial,sans-serif'>${subtitle}</text>
-</svg>`
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+const LOCAL_IMAGE_POOL = {
+  'Druer': [1, 2, 3, 4, 5, 6],
+  'Regioner': [7, 8, 9, 10, 11, 12],
+  'Smaking': [13, 14, 15, 16, 17, 18],
+  'Mat & vin': [19, 20, 21, 22, 23, 24],
+  'Produksjon': [25, 26, 27, 28, 29, 30],
 }
 
 function imageCandidates(question) {
-  const art = categoryArt[question.c] || { tags: 'wine' }
-  const sig = hashText(question.id)
-  return [
-    `https://loremflickr.com/900/520/${encodeURIComponent(art.tags)}?lock=${sig}`,
-    `https://picsum.photos/seed/wine-${sig}/900/520`,
-    imageFallbackSvg(question),
-  ]
+  const pool = LOCAL_IMAGE_POOL[question.c] || [1, 2, 3, 4, 5, 6]
+  const index = hashText(question.id) % pool.length
+  const primary = `/images/wine-${pool[index]}.jpg`
+  const secondary = `/images/wine-${pool[(index + 1) % pool.length]}.jpg`
+  return [primary, secondary]
 }
 
 function buildQuestionBank() {
