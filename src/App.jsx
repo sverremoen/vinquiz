@@ -107,24 +107,36 @@ const DISHES = [
 ]
 
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
-const categoryImageTag = {
-  'Druer': 'wine,grapes,vineyard',
-  'Regioner': 'wine,vineyard,landscape',
-  'Smaking': 'wine,tasting,glass',
-  'Mat & vin': 'wine,food,pairing',
-  'Produksjon': 'wine,cellar,barrel',
-}
-
-function hashText(str) {
-  let h = 0
-  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i)
-  return Math.abs(h)
+const categoryArt = {
+  'Druer': { emoji: '🍇', c1: '#7c3aed', c2: '#a78bfa' },
+  'Regioner': { emoji: '🗺️', c1: '#0ea5e9', c2: '#67e8f9' },
+  'Smaking': { emoji: '🍷', c1: '#be123c', c2: '#fb7185' },
+  'Mat & vin': { emoji: '🧀', c1: '#f59e0b', c2: '#fcd34d' },
+  'Produksjon': { emoji: '🛢️', c1: '#334155', c2: '#64748b' },
 }
 
 function imageForQuestion(question) {
-  const tag = categoryImageTag[question.c] || 'wine'
-  const sig = hashText(question.id)
-  return `https://source.unsplash.com/900x520/?${encodeURIComponent(tag)}&sig=${sig}`
+  const art = categoryArt[question.c] || { emoji: '🍷', c1: '#7c3aed', c2: '#a78bfa' }
+  const title = (question.c || 'VinQuiz').replace(/&/g, '&amp;')
+  const subtitle = (question.q || '').slice(0, 68).replace(/&/g, '&amp;')
+
+  const svg = `
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'>
+  <defs>
+    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='${art.c1}'/>
+      <stop offset='100%' stop-color='${art.c2}'/>
+    </linearGradient>
+  </defs>
+  <rect width='900' height='520' fill='url(#g)'/>
+  <circle cx='760' cy='110' r='120' fill='rgba(255,255,255,0.12)'/>
+  <circle cx='130' cy='450' r='180' fill='rgba(255,255,255,0.08)'/>
+  <text x='60' y='110' font-size='72' font-family='Inter,Arial,sans-serif'>${art.emoji}</text>
+  <text x='60' y='185' font-size='52' fill='white' font-weight='700' font-family='Inter,Arial,sans-serif'>${title}</text>
+  <text x='60' y='235' font-size='28' fill='rgba(255,255,255,0.92)' font-family='Inter,Arial,sans-serif'>${subtitle}</text>
+</svg>`
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
 
 function buildQuestionBank() {
