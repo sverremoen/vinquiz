@@ -15,4 +15,5 @@ h2{margin:10px 0}.feedback{min-height:20px;color:#fde68a;font-weight:700}.big{fo
 .spotlight{font-weight:800;color:#fde68a;animation:pulse .8s ease}
 @keyframes pulse{0%{transform:scale(.98);opacity:.6}100%{transform:scale(1);opacity:1}}
 .duelWinner{margin:10px 0;padding:10px;border:1px solid #f5d0fe66;border-radius:12px;background:#f5d0fe1a;font-weight:800}
+.questionImage{width:100%;max-height:250px;object-fit:cover;border-radius:14px;border:1px solid #ffffff2f;box-shadow:0 8px 18px rgba(0,0,0,.28);margin:8px 0 10px}
 

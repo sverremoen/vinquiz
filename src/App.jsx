@@ -107,6 +107,25 @@ const DISHES = [
 ]
 
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
+const categoryImageTag = {
+  'Druer': 'wine,grapes,vineyard',
+  'Regioner': 'wine,vineyard,landscape',
+  'Smaking': 'wine,tasting,glass',
+  'Mat & vin': 'wine,food,pairing',
+  'Produksjon': 'wine,cellar,barrel',
+}
+
+function hashText(str) {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i)
+  return Math.abs(h)
+}
+
+function imageForQuestion(question) {
+  const tag = categoryImageTag[question.c] || 'wine'
+  const sig = hashText(question.id)
+  return `https://source.unsplash.com/900x520/?${encodeURIComponent(tag)}&sig=${sig}`
+}
 
 function buildQuestionBank() {
   const bank = []
@@ -267,17 +286,51 @@ function App() {
   function pickQuestions() {
     const base = QUESTION_BANK.filter((q) => q.d === level)
     const noRepeatPool = base.filter((q) => !quarantine.includes(q.id))
+    const pool = noRepeatPool.length >= QUESTIONS_PER_ROUND ? noRepeatPool : base
 
-    let pool = noRepeatPool.length >= QUESTIONS_PER_ROUND ? noRepeatPool : base
+    // Adaptive difficulty by category weakness (from history)
+    const categoryPerf = {}
+    history.forEach((h) => {
+      Object.entries(h.categories || {}).forEach(([cat, stat]) => {
+        const prev = categoryPerf[cat] || { correct: 0, total: 0 }
+        categoryPerf[cat] = {
+          correct: prev.correct + stat.correct,
+          total: prev.total + stat.total,
+        }
+      })
+    })
+
+    const weighted = pool.map((q) => {
+      const p = categoryPerf[q.c]
+      const pct = p && p.total ? (p.correct / p.total) : 0.6
+      const weaknessBoost = 1.2 - pct // weaker categories get higher boost
+      return { q, w: Math.max(0.2, weaknessBoost) }
+    })
+
+    let selected = []
 
     if (mode === 'daily') {
       const seed = Number(new Date().toISOString().slice(0, 10).replaceAll('-', ''))
-      pool = [...pool].sort((a, b) => (a.id + seed).localeCompare(b.id + seed))
+      selected = [...weighted]
+        .sort((a, b) => (a.q.id + seed).localeCompare(b.q.id + seed))
+        .slice(0, QUESTIONS_PER_ROUND)
+        .map((x) => x.q)
     } else {
-      pool = shuffle(pool)
+      const bag = [...weighted]
+      while (selected.length < QUESTIONS_PER_ROUND && bag.length) {
+        const totalW = bag.reduce((s, x) => s + x.w, 0)
+        let r = Math.random() * totalW
+        let idx = 0
+        for (; idx < bag.length; idx++) {
+          r -= bag[idx].w
+          if (r <= 0) break
+        }
+        selected.push(bag[idx].q)
+        bag.splice(idx, 1)
+      }
     }
 
-    return pool.slice(0, QUESTIONS_PER_ROUND)
+    return selected
   }
 
   function startGame() {
@@ -412,6 +465,7 @@ function App() {
               <p>Snittscore: <strong>{avgPct}%</strong></p>
               <p>Tidligere runder: <strong>{history.length}</strong></p>
               <p>I karantene nå: <strong>{quarantine.length}</strong></p>
+              <p>Adaptive modus: <strong>på</strong> (flere spørsmål fra svake kategorier)</p>
             </div>
           </div>
         </section>
@@ -435,6 +489,12 @@ function App() {
           </div>
 
           <h2>{current.q}</h2>
+          <img
+            className="questionImage"
+            src={imageForQuestion(current)}
+            alt={`Illustrasjon for ${current.c}`}
+            loading="lazy"
+          />
           <div className="answers">
             {current.o.map((opt) => <button key={opt} onClick={() => onAnswer(opt)}>{opt}</button>)}
           </div>
