@@ -37,6 +37,11 @@ const prettyLevel = { easy: 'Lett', medium: 'Middels', hard: 'Ekspert' }
 const QUESTIONS_PER_ROUND = 12
 const ROUND_SECONDS = 20
 const STORAGE_KEY = 'vinquiz-premium-history-v1'
+const SOUND = {
+  ok: '✨',
+  fail: '🍂',
+  streak: '🔥',
+}
 
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
 const nowDateKey = () => new Date().toISOString().slice(0, 10)
@@ -58,6 +63,9 @@ function App() {
   const [name, setName] = useState('')
   const [level, setLevel] = useState('medium')
   const [mode, setMode] = useState('classic')
+  const [duelMode, setDuelMode] = useState(false)
+  const [duelPlayer, setDuelPlayer] = useState(1)
+  const [duelScores, setDuelScores] = useState({ 1: 0, 2: 0 })
   const [questions, setQuestions] = useState([])
   const [index, setIndex] = useState(0)
   const [score, setScore] = useState(0)
@@ -65,6 +73,7 @@ function App() {
   const [bestStreak, setBestStreak] = useState(0)
   const [timer, setTimer] = useState(ROUND_SECONDS)
   const [feedback, setFeedback] = useState('')
+  const [spotlight, setSpotlight] = useState('')
   const [categoryStats, setCategoryStats] = useState({})
   const [history, setHistory] = useState(() => {
     try {
@@ -123,8 +132,11 @@ function App() {
     setStreak(0)
     setBestStreak(0)
     setFeedback('')
+    setSpotlight('')
     setTimer(ROUND_SECONDS)
     setCategoryStats({})
+    setDuelScores({ 1: 0, 2: 0 })
+    setDuelPlayer(1)
     setPhase('play')
   }
 
@@ -142,18 +154,24 @@ function App() {
 
     if (isCorrect) {
       setScore((s) => s + 1)
+      if (duelMode) {
+        setDuelScores((ds) => ({ ...ds, [duelPlayer]: ds[duelPlayer] + 1 }))
+      }
       setStreak((s) => {
         const next = s + 1
         setBestStreak((b) => Math.max(b, next))
         return next
       })
-      setFeedback('Riktig! Elegant svar 🍷')
+      setFeedback(`Riktig! Elegant svar ${SOUND.ok}`)
+      setSpotlight(streak + 1 >= 3 ? `${SOUND.streak} HOT STREAK x${streak + 1}` : 'Perfekt nese for vin!')
     } else if (option === '__TIMEOUT__') {
       setStreak(0)
       setFeedback(`Tiden ute! Riktig svar: ${current.a}`)
+      setSpotlight(`Tempo! ${SOUND.fail}`)
     } else {
       setStreak(0)
       setFeedback(`Nesten! Riktig svar: ${current.a}`)
+      setSpotlight(`Kom tilbake sterkere ${SOUND.fail}`)
     }
 
     setTimeout(() => {
@@ -161,6 +179,7 @@ function App() {
         setPhase('result')
       } else {
         setIndex((i) => i + 1)
+        if (duelMode) setDuelPlayer((p) => (p === 1 ? 2 : 1))
         setTimer(ROUND_SECONDS)
         setFeedback('')
       }
@@ -216,6 +235,11 @@ function App() {
                 <button className={mode === 'daily' ? 'active' : ''} onClick={() => setMode('daily')}>Daily Challenge</button>
               </div>
 
+              <label>Ekstra underholdning</label>
+              <div className="chips">
+                <button className={duelMode ? 'active' : ''} onClick={() => setDuelMode((v) => !v)}>Duellmodus (2 spillere)</button>
+              </div>
+
               <button className="primary" onClick={startGame}>Start premium-runde</button>
             </div>
 
@@ -236,6 +260,7 @@ function App() {
             <span>Spm {index + 1}/{questions.length}</span>
             <span>Poeng {score}</span>
             <span>🔥 {streak}</span>
+            {duelMode && <span className="duel">🥊 Spiller {duelPlayer} sin tur</span>}
           </div>
 
           <div className="progressWrap"><div className="progress" style={{ width: `${(timer / ROUND_SECONDS) * 100}%` }} /></div>
@@ -250,6 +275,8 @@ function App() {
             {current.o.map((opt) => <button key={opt} onClick={() => onAnswer(opt)}>{opt}</button>)}
           </div>
           <p className="feedback">{feedback}</p>
+          {duelMode && <p className="duelScore">Spiller 1: {duelScores[1]} • Spiller 2: {duelScores[2]}</p>}
+          {spotlight && <p className="spotlight">{spotlight}</p>}
         </section>
       )}
 
@@ -277,6 +304,16 @@ function App() {
               )
             })}
           </div>
+
+          {duelMode && (
+            <div className="duelWinner">
+              {duelScores[1] === duelScores[2]
+                ? '🤝 Uavgjort duell!'
+                : duelScores[1] > duelScores[2]
+                  ? '🏅 Spiller 1 vant duellen!'
+                  : '🏅 Spiller 2 vant duellen!'}
+            </div>
+          )}
 
           <div className="row">
             <button className="primary" onClick={startGame}>Ny runde</button>

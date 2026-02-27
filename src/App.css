@@ -9,3 +9,10 @@ h2{margin:10px 0}.feedback{min-height:20px;color:#fde68a;font-weight:700}.big{fo
 .achievements{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.ach{background:#ffffff12;border:1px solid #ffffff33;border-radius:999px;padding:6px 10px}
 .categoryList{display:grid;gap:10px;margin-top:8px}.catHead{display:flex;justify-content:space-between}.bar{height:10px;border-radius:999px;background:#ffffff1f;overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,#c026d3,#f0abfc)}
 @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.hero{position:relative;overflow:hidden}.hero:after{content:'';position:absolute;inset:-20% -10% auto auto;width:260px;height:260px;background:radial-gradient(circle,#f472b655,transparent 60%);pointer-events:none}
+.duel{background:#ffffff14;border:1px solid #ffffff3a;border-radius:999px;padding:2px 8px}
+.duelScore{color:#f5d0fe;font-weight:700}
+.spotlight{font-weight:800;color:#fde68a;animation:pulse .8s ease}
+@keyframes pulse{0%{transform:scale(.98);opacity:.6}100%{transform:scale(1);opacity:1}}
+.duelWinner{margin:10px 0;padding:10px;border:1px solid #f5d0fe66;border-radius:12px;background:#f5d0fe1a;font-weight:800}
+
