@@ -107,6 +107,13 @@ const DISHES = [
 ]
 
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
+
+function hashText(str) {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i)
+  return Math.abs(h)
+}
+
 const LOCAL_IMAGE_POOL = {
   'Druer': [1, 2, 3, 4, 5, 6],
   'Regioner': [7, 8, 9, 10, 11, 12],
