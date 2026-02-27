@@ -108,26 +108,21 @@ const DISHES = [
 
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5)
 const categoryArt = {
-  'Druer': { emoji: '🍇', c1: '#7c3aed', c2: '#a78bfa' },
-  'Regioner': { emoji: '🗺️', c1: '#0ea5e9', c2: '#67e8f9' },
-  'Smaking': { emoji: '🍷', c1: '#be123c', c2: '#fb7185' },
-  'Mat & vin': { emoji: '🧀', c1: '#f59e0b', c2: '#fcd34d' },
-  'Produksjon': { emoji: '🛢️', c1: '#334155', c2: '#64748b' },
+  'Druer': { emoji: '🍇', c1: '#7c3aed', c2: '#a78bfa', tags: 'grapes,wine,vineyard' },
+  'Regioner': { emoji: '🗺️', c1: '#0ea5e9', c2: '#67e8f9', tags: 'vineyard,landscape,wine' },
+  'Smaking': { emoji: '🍷', c1: '#be123c', c2: '#fb7185', tags: 'wine,glass,tasting' },
+  'Mat & vin': { emoji: '🧀', c1: '#f59e0b', c2: '#fcd34d', tags: 'food,wine,dinner' },
+  'Produksjon': { emoji: '🛢️', c1: '#334155', c2: '#64748b', tags: 'wine,barrel,cellar' },
 }
 
-function imageForQuestion(question) {
+function imageFallbackSvg(question) {
   const art = categoryArt[question.c] || { emoji: '🍷', c1: '#7c3aed', c2: '#a78bfa' }
   const title = (question.c || 'VinQuiz').replace(/&/g, '&amp;')
   const subtitle = (question.q || '').slice(0, 68).replace(/&/g, '&amp;')
 
   const svg = `
 <svg xmlns='http://www.w3.org/2000/svg' width='900' height='520' viewBox='0 0 900 520'>
-  <defs>
-    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0%' stop-color='${art.c1}'/>
-      <stop offset='100%' stop-color='${art.c2}'/>
-    </linearGradient>
-  </defs>
+  <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='${art.c1}'/><stop offset='100%' stop-color='${art.c2}'/></linearGradient></defs>
   <rect width='900' height='520' fill='url(#g)'/>
   <circle cx='760' cy='110' r='120' fill='rgba(255,255,255,0.12)'/>
   <circle cx='130' cy='450' r='180' fill='rgba(255,255,255,0.08)'/>
@@ -135,8 +130,17 @@ function imageForQuestion(question) {
   <text x='60' y='185' font-size='52' fill='white' font-weight='700' font-family='Inter,Arial,sans-serif'>${title}</text>
   <text x='60' y='235' font-size='28' fill='rgba(255,255,255,0.92)' font-family='Inter,Arial,sans-serif'>${subtitle}</text>
 </svg>`
-
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
+function imageCandidates(question) {
+  const art = categoryArt[question.c] || { tags: 'wine' }
+  const sig = hashText(question.id)
+  return [
+    `https://loremflickr.com/900/520/${encodeURIComponent(art.tags)}?lock=${sig}`,
+    `https://picsum.photos/seed/wine-${sig}/900/520`,
+    imageFallbackSvg(question),
+  ]
 }
 
 function buildQuestionBank() {
@@ -261,6 +265,7 @@ function App() {
   const [categoryStats, setCategoryStats] = useState({})
   const [history, setHistory] = useState(loadHistory)
   const [quarantine, setQuarantine] = useState(loadQuarantine)
+  const [imgAttempt, setImgAttempt] = useState(0)
 
   const current = questions[index]
 
@@ -276,6 +281,15 @@ function App() {
     onAnswer('__TIMEOUT__')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer, phase])
+
+  useEffect(() => {
+    if (!current) return
+    setImgAttempt(0)
+    const next = questions[index + 1]
+    if (!next) return
+    const preload = new Image()
+    preload.src = imageCandidates(next)[0]
+  }, [current, index, questions])
 
   const scorePct = questions.length ? Math.round((score / questions.length) * 100) : 0
 
@@ -503,9 +517,10 @@ function App() {
           <h2>{current.q}</h2>
           <img
             className="questionImage"
-            src={imageForQuestion(current)}
+            src={imageCandidates(current)[imgAttempt]}
             alt={`Illustrasjon for ${current.c}`}
-            loading="lazy"
+            loading="eager"
+            onError={() => setImgAttempt((n) => Math.min(n + 1, imageCandidates(current).length - 1))}
           />
           <div className="answers">
             {current.o.map((opt) => <button key={opt} onClick={() => onAnswer(opt)}>{opt}</button>)}
