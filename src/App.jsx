@@ -7,6 +7,7 @@ const QUESTIONS_PER_ROUND = 12
 const ROUND_SECONDS = 20
 const STORAGE_KEY = 'vinquiz-premium-history-v1'
 const QUARANTINE_KEY = 'vinquiz-question-quarantine-v1'
+const THEME_KEY = 'vinquiz-theme-v1'
 const QUARANTINE_SIZE = 280
 
 const GRAPES = [
@@ -235,6 +236,7 @@ function loadQuarantine() {
 function App() {
   const [phase, setPhase] = useState('setup')
   const [name, setName] = useState('')
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'dark')
   const [level, setLevel] = useState('medium')
   const [mode, setMode] = useState('classic')
   const [duelMode, setDuelMode] = useState(false)
@@ -268,6 +270,10 @@ function App() {
     onAnswer('__TIMEOUT__')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer, phase])
+
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, theme)
+  }, [theme])
 
   useEffect(() => {
     if (!current) return
@@ -438,13 +444,18 @@ function App() {
   const avgPct = history.length ? Math.round(history.reduce((a, b) => a + b.pct, 0) / history.length) : 0
 
   return (
-    <div className="app">
+    <div className={`app ${theme}`}>
       <header className="hero">
-        <h1>VinQuiz Premium</h1>
-        <p>
-          Spørsmålsbank: <strong>{QUESTION_BANK.length.toLocaleString('no-NO')}</strong> spørsmål •
-          Karantene på siste <strong>{QUARANTINE_SIZE}</strong> spørsmål for å unngå repetisjon.
-        </p>
+        <div>
+          <h1>VinQuiz Premium</h1>
+          <p>
+            Spørsmålsbank: <strong>{QUESTION_BANK.length.toLocaleString('no-NO')}</strong> spørsmål •
+            Karantene på siste <strong>{QUARANTINE_SIZE}</strong> spørsmål for å unngå repetisjon.
+          </p>
+        </div>
+        <button className="themeBtn" onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>
+          {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+        </button>
       </header>
 
       {phase === 'setup' && (
